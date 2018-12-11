@@ -13,6 +13,7 @@ Actually `update-bing-wallpaper` is cleaned up and simplified fork of https://gi
 wget https://github.com/marguerite/linux-bing-wallpaper/archive/master.zip
 unzip master.zip
 cp -r bing-wallpaper-master/bin ~
+chmod +x ~/bin/update-bing-wallpaper
 ```
 Edit this file `~/bin/update-bing-wallpaper` to adjust wallpaper size/save path.
 
