@@ -1,0 +1,90 @@
+#!/bin/bash
+
+# Size
+size="1920x1080"
+
+# Market for image
+market="en-US"
+
+# Collection Path
+path="$(xdg-user-dir PICTURES)/Bing/"
+
+# For day (0=current; 1=yesterday... so on)
+day="0"
+
+########################################################################
+#### DO NOT EDIT BELOW THIS LINE #######################################
+########################################################################
+
+# Base URL
+bing="https://www.bing.com"
+
+# API end point
+api="/HPImageArchive.aspx?"
+
+# Required Image Uri.
+reqImg="$bing$api&format=js&idx=$day&mkt=$market&n=1"
+
+# Logging.
+echo "Pinging Bing API..."
+
+# Fetching API response.
+apiResp=$(wget --quiet --output-document=- "$reqImg")
+if (( $? > 0 )); then
+  echo "Ping failed!"
+  exit 1
+fi
+
+# Default image URL in case the required is not available.
+defImgURL="$bing$(echo $apiResp | grep -oP 'url\":\"[^\"]*' | cut -d \" -f 3)"
+
+# Req image url (raw).
+reqImgURL="$bing$(echo $apiResp | grep -oP 'urlbase\":\"[^\"]*' | cut -d \" -f 3)_$size.jpg"
+
+# Image copyright.
+copyright="$(echo $apiResp | grep -oP 'copyright\":\"[^\"]*' | cut -d \" -f 3)"
+
+# Checking if reqImgURL exists.
+if ! wget --quiet --spider --max-redirect 0 "$reqImgURL"; then
+  reqImgURL="$defImgURL"
+fi
+
+# Logging.
+echo "Bing Image of the day: $copyright"
+echo "$reqImgURL"
+
+# Getting Image Name.
+imgName="${reqImgURL##*/}"
+
+# Create Path Dir.
+mkdir -p "$path"
+
+# Saving Image to collection.
+wget --no-clobber --quiet --output-document="$path$imgName" "$reqImgURL" || exit 0
+
+# Logging.
+echo "Saving image to $path$imgName"
+
+notifier=$(command -v notify-send.sh || command -v notify-send)
+if [[ $notifier != '' ]]; then
+    $notifier -u low -t 10 -i preferences-desktop-wallpaper "$copyright"
+fi
+
+if [[ "$XDG_CURRENT_DESKTOP" == "XFCE" ]]; then
+    xres=($(xfconf-query --channel xfce4-desktop --list | grep last-image))
+    for x in "${xres[@]}"
+    do
+      xfconf-query --channel xfce4-desktop --property "$x" --set "$path$imgName"
+    done
+elif [[ "$XDG_CURRENT_DESKTOP" == "MATE" ]]; then
+    gsettings set org.mate.background picture-filename "$path$imgName"
+# Set the wallpaper for unity, gnome3, cinnamon.
+elif gsettings set org.gnome.desktop.background picture-uri "file://$path$imgName"; then
+    # Set the view to zoom,
+    gsettings set org.gnome.desktop.background picture-options "zoom"
+else
+    echo "$XDG_CURRENT_DESKTOP not supported."
+fi
+
+echo "New wallpaper set successfully for $XDG_CURRENT_DESKTOP."
+
