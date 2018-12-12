@@ -67,7 +67,7 @@ echo "Saving image to $path$imgName"
 
 notifier=$(command -v notify-send.sh || command -v notify-send)
 if [[ $notifier != '' ]]; then
-    $notifier -u low -t 10 -i preferences-desktop-wallpaper "$copyright"
+    $notifier -u low -t 10 -i preferences-desktop-wallpaper "Bing Wallpaper of the Day" "$copyright"
 fi
 
 if [[ "$XDG_CURRENT_DESKTOP" == "XFCE" ]]; then
