@@ -35,26 +35,26 @@ if (( $? > 0 )); then
   exit 1
 fi
 
-# Default image URL in case the required is not available.
-defImgURL="$bing$(echo $apiResp | grep -oP 'url\":\"[^\"]*' | cut -d \" -f 3)"
-
 # Req image url (raw).
-reqImgURL="$bing$(echo $apiResp | grep -oP 'urlbase\":\"[^\"]*' | cut -d \" -f 3)_$size.jpg"
+reqImgURL="$bing/aaa$(echo $apiResp | grep -oP 'urlbase\":\"[^\"]*' | cut -d \" -f 3)_$size.jpg"
 
-# Image copyright.
-copyright="$(echo $apiResp | grep -oP 'copyright\":\"[^\"]*' | cut -d \" -f 3)"
+# Image title.
+title="$(echo $apiResp | grep -oP 'title\":\"[^\"]*' | cut -d \" -f 3)"
 
 # Checking if reqImgURL exists.
 if ! wget --quiet --spider --max-redirect 0 "$reqImgURL"; then
-  reqImgURL="$defImgURL"
+  # Default image URL in case the required size is not available.
+  reqImgURL="$bing$(echo $apiResp | grep -oP 'url\":\"[^\"]*' | cut -d \" -f 3)"
 fi
 
-# Logging.
-echo "Bing Image of the day: $copyright"
-echo "$reqImgURL"
-
-# Getting Image Name.
+# Getting Image filename.
 imgName="${reqImgURL##*/}"
+imgName="${imgName#th?id=OHR.}"
+imgName="${imgName%&rf=*}"
+
+# Logging.
+echo "Bing Image of the day: $title"
+echo "$reqImgURL" "->" "$imgName"
 
 # Create Path Dir.
 mkdir -p "$path"
@@ -67,7 +67,7 @@ echo "Saving image to $path$imgName"
 
 notifier=$(command -v notify-send.sh || command -v notify-send)
 if [[ $notifier != '' ]]; then
-    $notifier -u low -t 10 -i preferences-desktop-wallpaper "Bing Wallpaper of the Day" "$copyright"
+    $notifier -u low -t 10 -i preferences-desktop-wallpaper "Bing Wallpaper of the Day" "$title"
 fi
 
 if [[ "$XDG_CURRENT_DESKTOP" == "XFCE" ]]; then
